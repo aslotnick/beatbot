@@ -5,10 +5,18 @@ from beatbot.Beatbot import Beatbot
 def metronome():
     return Beatbot('test/metronome_6.wav')
 
-def test_metronome_onsets(metronome):
-    metronome.plot_onsets('test/onsets.png')
+@pytest.fixture
+def dual_metronome():
+    return Beatbot('test/metronome_mixed_10.wav')
+
+def test_metronome_onsets(metronome, dual_metronome):
     assert len(metronome.onsets) == 6
 
-def test_metronome_instrument_count(metronome):
-    pass
+    dual_metronome.plot_onsets('test/onsets.png')
+    assert len(dual_metronome.onsets) == 10
+    
+
+def test_metronome_instrument_count(metronome, dual_metronome):
+    assert metronome.instrument_count == 1
+    #assert dual_metronome.instrument_count == 2
 
