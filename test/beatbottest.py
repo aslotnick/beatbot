@@ -9,10 +9,13 @@ def metronome():
 def dual_metronome():
     return Beatbot('test/metronome_mixed_10.wav')
 
-def test_metronome_onsets(metronome, dual_metronome):
-    assert len(metronome.onsets) == 6
+@pytest.fixture
+def kick_hat():
+    return Beatbot('test/kick_hat.wav')
 
-    dual_metronome.plot_onsets('test/onsets.png')
+def test_metronome_onsets(metronome, dual_metronome):
+    #metronome.plot_onsets('test/onsets.png')
+    assert len(metronome.onsets) == 6
     assert len(dual_metronome.onsets) == 10
     
 
@@ -20,3 +23,7 @@ def test_metronome_instrument_count(metronome, dual_metronome):
     assert metronome.instrument_count == 1
     #assert dual_metronome.instrument_count == 2
 
+
+def test_kick_hat_onsets(kick_hat):
+    kick_hat.plot_onsets('test/onsets.png')
+    assert len(kick_hat.onsets) == 9
