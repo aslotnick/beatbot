@@ -1,6 +1,6 @@
 import numpy 
 from scipy.io import wavfile
-from scipy.signal import find_peaks_cwt
+from scipy import fftpack
 from matplotlib.mlab import specgram
 from matplotlib import pyplot
 
@@ -37,14 +37,24 @@ class Beatbot(object):
         return 1
     
 
-    def plot_onsets(self, path):
+    def plot(self, path):
         """
-        save a graph of the frequency with onsets 
+        plot the samples and onsets,
+        and a spectrogram
         """
-        pyplot.plot(numpy.arange(self.samples.size), self.samples)
+        figure, axes = pyplot.subplots(4, sharex=True)
+
+        axes[0].plot(numpy.arange(self.samples.size), self.samples)
         extent = numpy.absolute(self.samples).max()
-        pyplot.vlines(self.onsets, -extent, extent)
-        pyplot.axhline(self._threshold())
+        axes[0].vlines(self.onsets, -extent, extent)
+        axes[0].axhline(self._threshold())
+
+        #axes[1].specgram(self.samples, Fs=1)
+        self._identify_frequency_ranges()
+        for z in range(3):
+            onset, dft, frequencies = self.dfts[z]
+            axes[z+1].barh(frequencies[:10], dft[:10], left=onset)
+
         pyplot.savefig(path)
 
 
@@ -68,12 +78,37 @@ class Beatbot(object):
         """
         identify the indices of the beginning of notes 
         (might correspond to the onset or the attack)
-        using a changes in amplitude
+        using a change in amplitude
         greater than a naive threshold
         """
         greater_mask = numpy.greater(numpy.diff(self.absolute_samples), self._threshold())
         greater_indices = [i[0] for i,j in numpy.ndenumerate(greater_mask) if j]
         self._onsets = greater_indices
+
+
+    def _identify_frequency_ranges(self):
+        """
+        for each note (between two onsets),
+        perform FFT
+        retain only the top 10 frequency magnitudes
+        """
+        dfts = []
+        num_onsets = self.onsets.size
+        for o in range(num_onsets):
+            onset = self.onsets[o]
+            if o == num_onsets - 1:
+                next_onset = None
+            else:
+                next_onset = self.onsets[o+1]
+            note_samples = self.samples[onset:next_onset]
+            dft = numpy.absolute(fftpack.rfft(note_samples))
+            frequencies = fftpack.rfftfreq(note_samples.size, 1/self.rate)
+            top_indices = numpy.argsort(dft)[-10:]
+            top_dft = dft[top_indices]
+            top_frequencies = frequencies[top_indices]
+            dfts.append((onset, top_dft, top_frequencies))
+        self.dfts = dfts
+
 
 
     def _combine_onsets(self):
