@@ -20,9 +20,9 @@ def test_metronome_onsets(metronome, dual_metronome):
 def test_metronome_instrument_count(metronome, dual_metronome):
     metronome.plot('test/metronome.png')
     dual_metronome.plot('test/dual_metronome.png')
-    assert metronome.instrument_count == 1
-    #assert dual_metronome.instrument_count == 2
+    dual_metronome._cluster_notes()
 
 def test_kick_hat_onsets(kick_hat):
     kick_hat.plot('test/kick_hat.png')
     assert len(kick_hat.onsets) == 9
+    kick_hat._cluster_notes()

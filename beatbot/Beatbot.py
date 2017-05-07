@@ -1,6 +1,7 @@
 import numpy 
 from scipy.io import wavfile
 from scipy import fftpack
+from scipy.cluster.vq import kmeans2
 from matplotlib.mlab import specgram
 from matplotlib import pyplot
 
@@ -13,10 +14,16 @@ class Beatbot(object):
     Each cluster is an "instrument"
     """
 
-    def __init__(self, path, num_samples=None):
+    def __init__(self, path, num_samples=None, num_instruments=1):
+        """
+        num_samples: number of samples to process, default all
+        num_instruments: specify how many instruments are present
+        """
         self._load_audio(path, num_samples)
         self.absolute_samples = numpy.absolute(self.samples)
         self._onsets = []
+        self.instrument_count = num_instruments
+        self._identify_frequency_ranges()
 
 
     @property
@@ -28,11 +35,6 @@ class Beatbot(object):
             self._identify_changes()
             self._combine_onsets()
         return self._onsets
-
-
-    @property
-    def instrument_count(self):
-        return 1
 
 
     def plot(self, path):
@@ -47,7 +49,6 @@ class Beatbot(object):
         axes[0].vlines(self.onsets, -extent, extent)
         axes[0].axhline(self._threshold())
 
-        self._identify_frequency_ranges()
         for z in range(len(self.dfts)):
             onset, dft, frequencies = self.dfts[z]
             onset_end = len(self.samples) if z == len(self.dfts)-1 else self.dfts[z+1][0]
@@ -125,3 +126,11 @@ class Beatbot(object):
                 new_onsets.append(candidate)
                 current = candidate
         self._onsets = numpy.array(new_onsets)
+
+    def _cluster_notes(self):
+        self.instrument_count
+        self.dfts
+        observations = [f for (o, d, f) in self.dfts]
+        centroids, labels = kmeans2(observations, self.instrument_count)
+        print(centroids, labels)
+
