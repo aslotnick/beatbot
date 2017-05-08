@@ -24,6 +24,7 @@ class Beatbot(object):
         self._onsets = []
         self.instrument_count = num_instruments
         self._identify_frequency_ranges()
+        self._cluster_notes()
 
 
     @property
@@ -42,20 +43,26 @@ class Beatbot(object):
         plot the samples and onsets,
         and the most important frequencies
         """
-        figure, axes = pyplot.subplots(3, sharex=True)
-
-        axes[0].plot(numpy.arange(self.samples.size), self.samples)
+        figure, axes = pyplot.subplots(4, sharex=True)
         extent = numpy.absolute(self.samples).max()*1.25
-        axes[0].vlines(self.onsets, -extent, extent)
-        axes[0].axhline(self._threshold())
+
+        bar_colors = 'rygbiv'
+        axes[0].bar(self.onsets, width=2000, 
+                    height=[10 for i in range(len(self.onsets))], 
+                    color=[bar_colors[i] for i in self.instruments])
+
+        axes[1].plot(numpy.arange(self.samples.size), self.samples)
+        axes[1].vlines(self.onsets, -extent, extent)
+        axes[1].axhline(self._threshold())
+
 
         for z in range(len(self.dfts)):
             onset, dft, frequencies = self.dfts[z]
             onset_end = len(self.samples) if z == len(self.dfts)-1 else self.dfts[z+1][0]
             onset_widths = [onset_end-onset for i in range(len(frequencies))]
-            axes[1].barh(frequencies, width=onset_widths, left=onset, height=5)
+            axes[2].barh(frequencies, width=onset_widths, left=onset, height=5)
 
-        axes[2].specgram(self.samples, Fs=1)
+        axes[3].specgram(self.samples, Fs=1)
         
         pyplot.savefig(path)
 
@@ -127,10 +134,11 @@ class Beatbot(object):
                 current = candidate
         self._onsets = numpy.array(new_onsets)
 
+
     def _cluster_notes(self):
         self.instrument_count
         self.dfts
         observations = [f for (o, d, f) in self.dfts]
-        centroids, labels = kmeans2(observations, self.instrument_count)
-        print(centroids, labels)
+        centroids, labels = kmeans2(observations, self.instrument_count, minit='points')
+        self.instruments = labels
 
